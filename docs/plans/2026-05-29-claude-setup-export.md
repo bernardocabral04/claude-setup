@@ -15,6 +15,8 @@
 2. `tts-kokoro-install.sh` + `tts-kokoro-uninstall.sh`: `com.bernardo.claude-tts-kokoro` → `com.claude.tts-kokoro` (must match in both)
 3. `consolidator-lib.sh` line ~8: replace the `-Users-bernardo` example path in the comment with a generic `-Users-you` example
 
+The Claude-icon notifier bundle ID (`com.bernardo.claudecode.notifier` in the live bundle) is **not** a copied-file edit — the prebuilt bundle is not committed. Instead `notifier-install.sh` (authored in Task 3) builds the bundle from the user's local `terminal-notifier` and writes a generic bundle ID `com.claude.code.notifier`. `notify.sh` references the bundle by path (`~/.claude/apps/Claude Code Notifier.app/...`), not by ID, so it ships verbatim with no edit.
+
 ---
 
 ## File Structure
@@ -31,7 +33,9 @@ claude-setup/
 │   ├── scripts/_merge-hook.sh        (NEW — authored here)
 │   └── INSTALL.md
 ├── ntfy/
-│   ├── scripts/{notify.sh, ntfy-push.sh, ntfy-enable-impl.sh, ntfy-disable-impl.sh, ntfy-status-impl.sh, ntfy-config-impl.sh}
+│   ├── scripts/{notify.sh, ntfy-push.sh, ntfy-enable-impl.sh, ntfy-disable-impl.sh, ntfy-status-impl.sh, ntfy-config-impl.sh,
+│   │            notifier-install.sh, notifier-uninstall.sh}   (last two NEW — authored here)
+│   ├── scripts/assets/cc.icns        (Claude icon, copied from the existing bundle)
 │   ├── commands/{ntfy-enable.md, ntfy-disable.md, ntfy-status.md, ntfy-config.md}
 │   └── INSTALL.md
 ├── tts/
@@ -245,10 +249,12 @@ git commit -m "feat(core): shared session-id helpers + idempotent hook merger"
 
 **Files:**
 - Copy 6 scripts + apply genericization edit #1
+- Copy the Claude icon `cc.icns` from the existing notifier bundle
+- Author `notifier-install.sh` + `notifier-uninstall.sh` (build the Claude-branded macOS notifier from local terminal-notifier)
 - Copy 4 command defs
 - Create: `ntfy/INSTALL.md`
 
-- [ ] **Step 1: Copy scripts and commands verbatim**
+- [ ] **Step 1: Copy scripts, the Claude icon, and commands verbatim**
 
 ```bash
 cd ~/Projects/personal/claude-setup
@@ -259,6 +265,8 @@ cp ~/.claude/scripts/notify.sh \
    ~/.claude/scripts/ntfy-status-impl.sh \
    ~/.claude/scripts/ntfy-config-impl.sh \
    ntfy/scripts/
+mkdir -p ntfy/scripts/assets
+cp "$HOME/.claude/apps/Claude Code Notifier.app/Contents/Resources/cc.icns" ntfy/scripts/assets/
 cp ~/.claude/commands/ntfy-enable.md \
    ~/.claude/commands/ntfy-disable.md \
    ~/.claude/commands/ntfy-status.md \
@@ -266,6 +274,116 @@ cp ~/.claude/commands/ntfy-enable.md \
    ntfy/commands/
 chmod +x ntfy/scripts/*.sh
 ```
+
+- [ ] **Step 1b: Author `ntfy/scripts/notifier-install.sh`**
+
+Full content:
+
+```bash
+#!/bin/bash
+# Build a Claude-branded macOS notifier from the locally-installed terminal-notifier.
+# Produces ~/.claude/apps/Claude Code Notifier.app with the Claude icon, so the
+# macOS notifications fired by notify.sh show "Claude Code" + the Claude icon
+# instead of the generic terminal-notifier icon. macOS only. Optional.
+set -e
+
+if [ "$(uname)" != "Darwin" ]; then
+  echo "ERROR: macOS only." >&2; exit 1
+fi
+
+APPS_DIR="$HOME/.claude/apps"
+DEST="$APPS_DIR/Claude Code Notifier.app"
+BUNDLE_ID="com.claude.code.notifier"
+
+# Icon: prefer the repo copy (when run from the repo), else the installed copy.
+ICON_SRC="$(cd "$(dirname "$0")" && pwd)/assets/cc.icns"
+[ -f "$ICON_SRC" ] || ICON_SRC="$HOME/.claude/scripts/assets/cc.icns"
+[ -f "$ICON_SRC" ] || { echo "ERROR: cc.icns not found (looked in ./assets and ~/.claude/scripts/assets)." >&2; exit 1; }
+
+# Ensure terminal-notifier is installed.
+if ! command -v terminal-notifier >/dev/null 2>&1; then
+  if command -v brew >/dev/null 2>&1; then
+    echo "Installing terminal-notifier via Homebrew…"
+    brew install terminal-notifier
+  else
+    echo "ERROR: terminal-notifier not found and Homebrew unavailable." >&2
+    echo "Install terminal-notifier first (brew install terminal-notifier), then re-run." >&2
+    exit 1
+  fi
+fi
+
+# Locate the real terminal-notifier.app. The brew 'bin' entry is a symlink into
+# the .app at .../terminal-notifier.app/Contents/MacOS/terminal-notifier.
+BIN="$(command -v terminal-notifier)"
+LINK="$(readlink "$BIN" 2>/dev/null || true)"
+if [ -n "$LINK" ]; then
+  case "$LINK" in
+    /*) REAL="$LINK" ;;
+    *)  REAL="$(cd "$(dirname "$BIN")" && cd "$(dirname "$LINK")" && pwd)/$(basename "$LINK")" ;;
+  esac
+else
+  REAL="$BIN"
+fi
+SRC_APP="$(cd "$(dirname "$REAL")/../.." 2>/dev/null && pwd || true)"
+if [ -z "$SRC_APP" ] || [ ! -d "$SRC_APP/Contents/MacOS" ]; then
+  echo "ERROR: could not locate terminal-notifier.app from $BIN" >&2; exit 1
+fi
+
+# Build the branded bundle.
+mkdir -p "$APPS_DIR"
+rm -rf "$DEST"
+cp -R "$SRC_APP" "$DEST"
+
+# Swap in the Claude icon (named cc.icns; CFBundleIconFile set to "cc" below).
+rm -f "$DEST/Contents/Resources/"*.icns
+cp "$ICON_SRC" "$DEST/Contents/Resources/cc.icns"
+
+# Patch Info.plist: display name, name, icon file, generic bundle id.
+PLIST="$DEST/Contents/Info.plist"
+PB=/usr/libexec/PlistBuddy
+"$PB" -c "Set :CFBundleDisplayName Claude Code" "$PLIST" 2>/dev/null || "$PB" -c "Add :CFBundleDisplayName string Claude Code" "$PLIST"
+"$PB" -c "Set :CFBundleName Claude Code"        "$PLIST" 2>/dev/null || "$PB" -c "Add :CFBundleName string Claude Code" "$PLIST"
+"$PB" -c "Set :CFBundleIconFile cc"             "$PLIST" 2>/dev/null || "$PB" -c "Add :CFBundleIconFile string cc" "$PLIST"
+"$PB" -c "Set :CFBundleIdentifier $BUNDLE_ID"   "$PLIST" 2>/dev/null || "$PB" -c "Add :CFBundleIdentifier string $BUNDLE_ID" "$PLIST"
+
+# Re-sign ad-hoc (we modified a signed bundle) and register with Launch Services.
+codesign --force --deep --sign - "$DEST" >/dev/null 2>&1 || true
+LSREG=/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister
+[ -x "$LSREG" ] && "$LSREG" -f "$DEST" >/dev/null 2>&1 || true
+touch "$DEST"
+
+echo "Built: $DEST"
+echo "Bundle id: $BUNDLE_ID"
+echo "notify.sh will now show the Claude icon in macOS notifications."
+echo 'Test it:  printf "{}" | bash ~/.claude/scripts/notify.sh stop'
+```
+
+- [ ] **Step 1c: Author `ntfy/scripts/notifier-uninstall.sh`**
+
+Full content:
+
+```bash
+#!/bin/bash
+# Remove the Claude-branded macOS notifier bundle built by notifier-install.sh.
+set -e
+DEST="$HOME/.claude/apps/Claude Code Notifier.app"
+LSREG=/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister
+if [ -d "$DEST" ]; then
+  [ -x "$LSREG" ] && "$LSREG" -u "$DEST" >/dev/null 2>&1 || true
+  rm -rf "$DEST"
+  echo "Removed: $DEST"
+else
+  echo "Already removed: $DEST not present."
+fi
+```
+
+- [ ] **Step 1d: Make the notifier scripts executable + syntax-check them**
+
+```bash
+chmod +x ntfy/scripts/notifier-install.sh ntfy/scripts/notifier-uninstall.sh
+bash -n ntfy/scripts/notifier-install.sh && bash -n ntfy/scripts/notifier-uninstall.sh && echo "SYNTAX OK"
+```
+Expected: `SYNTAX OK`.
 
 - [ ] **Step 2: Apply genericization edit #1 (drop personal topic prefix)**
 
@@ -281,10 +399,10 @@ to
 NTFY_TOPIC=claude-$RAND
 ```
 
-- [ ] **Step 3: Verify no personal strings remain**
+- [ ] **Step 3: Verify no personal strings remain** (`-I` skips the binary icon)
 
 ```bash
-grep -rn "bernardo" ntfy/ && echo "FAIL: personal string present" || echo "CLEAN"
+grep -rnI "bernardo" ntfy/ && echo "FAIL: personal string present" || echo "CLEAN"
 ```
 Expected: `CLEAN`.
 
@@ -301,15 +419,32 @@ Pushes Claude Code events to your phone via [ntfy.sh](https://ntfy.sh). A single
 ## Prerequisites
 - **core installed** (see `../core/INSTALL.md`)
 - `bash`, `jq`, `curl`
-- macOS for the clipboard convenience (`pbcopy`); optional `qrencode` for an inline QR
 - The ntfy app on your phone (iOS: App Store “ntfy”; Android: F-Droid/Play)
+- macOS for the clipboard convenience (`pbcopy`); optional `qrencode` for an inline QR
+- Optional `terminal-notifier` (auto-installed by `notifier-install.sh`) for native
+  macOS notifications with the Claude icon
 
 ## 1. Place files
 ```bash
-cp ntfy/scripts/* ~/.claude/scripts/
+mkdir -p ~/.claude/scripts/assets
+cp ntfy/scripts/*.sh ~/.claude/scripts/
+cp ntfy/scripts/assets/cc.icns ~/.claude/scripts/assets/
 cp ntfy/commands/* ~/.claude/commands/
-chmod +x ~/.claude/scripts/notify.sh ~/.claude/scripts/ntfy-*.sh
+chmod +x ~/.claude/scripts/notify.sh ~/.claude/scripts/ntfy-*.sh ~/.claude/scripts/notifier-*.sh
 ```
+
+## 1b. (Optional, macOS) Claude-icon notifications
+`notify.sh` fires a native macOS notification on each event. To brand it with the
+Claude icon and the name “Claude Code” (instead of the generic terminal-notifier
+icon), build the wrapper app:
+```bash
+bash ~/.claude/scripts/notifier-install.sh
+```
+This installs `terminal-notifier` via Homebrew if it’s missing and builds
+`~/.claude/apps/Claude Code Notifier.app`. Skipping this step is fine — if
+`terminal-notifier` is already on your PATH, notifications still fire (with its
+default icon); otherwise the macOS notification is silently skipped and only the
+phone push remains. Remove later with `notifier-uninstall.sh`.
 
 ## 2. Wire hooks
 `notify.sh` listens on seven events. Run:
@@ -339,19 +474,25 @@ arrives. `/ntfy-status` shows current state. Per-event toggles live in
 `~/.claude/ntfy.conf` (or use `/ntfy-config`).
 
 ## Uninstall
+The event→arg mapping is not a simple lowercase (e.g. `PermissionRequest`→`permission`,
+`SubagentStop`→`subagent_stop`), so remove using the exact command strings added in
+step 2:
 ```bash
 M=~/.claude/scripts/_merge-hook.sh
-for e in SessionStart SessionEnd PermissionRequest Stop Notification SubagentStop PreCompact; do
-  bash $M remove "$e" "bash ~/.claude/scripts/notify.sh ${e}"  # see note
-done
-rm -f ~/.claude/scripts/notify.sh ~/.claude/scripts/ntfy-*.sh
+bash $M remove SessionStart      "bash ~/.claude/scripts/notify.sh session_start"
+bash $M remove SessionEnd        "bash ~/.claude/scripts/notify.sh session_end"
+bash $M remove PermissionRequest "bash ~/.claude/scripts/notify.sh permission"
+bash $M remove Stop              "bash ~/.claude/scripts/notify.sh stop"
+bash $M remove Notification      "bash ~/.claude/scripts/notify.sh notify"
+bash $M remove SubagentStop      "bash ~/.claude/scripts/notify.sh subagent_stop"
+bash $M remove PreCompact        "bash ~/.claude/scripts/notify.sh precompact"
+
+bash ~/.claude/scripts/notifier-uninstall.sh 2>/dev/null || true   # remove Claude-icon bundle
+rm -f ~/.claude/scripts/notify.sh ~/.claude/scripts/ntfy-*.sh ~/.claude/scripts/notifier-*.sh
+rm -f ~/.claude/scripts/assets/cc.icns
 rm -f ~/.claude/commands/ntfy-*.md
 rm -f ~/.claude/ntfy.conf; rm -rf ~/.claude/ntfy-sessions
 ```
-> Note: the event→arg mapping is not 1:1 (e.g. `PermissionRequest`→`permission`,
-> `SubagentStop`→`subagent_stop`). Remove using the exact command strings added in
-> step 2 above. The four arg spellings that differ from a lowercased event name
-> are: `session_start`, `session_end`, `subagent_stop`, `permission`.
 ````
 
 - [ ] **Step 5: Commit**
@@ -650,7 +791,7 @@ module.
 | Module | What it does | Hooks | macOS-only? |
 |--------|--------------|-------|-------------|
 | [`core`](core/INSTALL.md) | Shared session-id helpers + idempotent `settings.json` hook merger. **Required by all others.** | — | no |
-| [`ntfy`](ntfy/INSTALL.md) | Phone push notifications via [ntfy.sh](https://ntfy.sh) for every Claude Code event. | SessionStart/End, Stop, Notification, PermissionRequest, SubagentStop, PreCompact | clipboard/QR conveniences only |
+| [`ntfy`](ntfy/INSTALL.md) | Native macOS notifications (with the Claude icon, via an optional terminal-notifier wrapper) **and** phone push via [ntfy.sh](https://ntfy.sh) for every Claude Code event. | SessionStart/End, Stop, Notification, PermissionRequest, SubagentStop, PreCompact | native notif/icon are macOS; phone push is cross-platform |
 | [`tts`](tts/INSTALL.md) | Speaks Claude’s responses on `Stop` (Kokoro server or macOS `say`), LLM-cleaned. | Stop | yes (`say`/`afplay`) |
 | [`consolidator`](consolidator/INSTALL.md) | On `Stop`, evaluates the transcript and consolidates long-term memory files. | Stop | no |
 
@@ -680,14 +821,24 @@ Verify → Uninstall.
 ## Dependencies
 
 - All: `bash`, `jq`. ntfy/consolidator also use `curl`.
-- ntfy: ntfy phone app; optional `qrencode`, macOS `pbcopy`.
+- ntfy: ntfy phone app; optional `terminal-notifier` (auto-installed for the
+  Claude-icon macOS notifier), `qrencode`, macOS `pbcopy`.
 - tts: macOS (`say`, `afplay`); optional Kokoro server, OpenRouter key,
   Karabiner-Elements (stop hotkeys).
 - consolidator: optional OpenRouter key.
 
+## Notices
+
+- [`terminal-notifier`](https://github.com/julienXX/terminal-notifier) is MIT
+  licensed (© Eloy Durán, Julien Blanchard). The ntfy module does not bundle it;
+  `notifier-install.sh` builds a wrapper from your locally installed copy.
+- `cc.icns` is the Claude logo (an Anthropic mark), included only for personal use
+  to brand local notifications. Not affiliated with or endorsed by Anthropic.
+
 ## License
 
-MIT (see `LICENSE`).
+MIT for the scripts in this repo (see `LICENSE`). Third-party components retain
+their own licenses (see Notices).
 ````
 
 - [ ] **Step 2: Add a LICENSE (MIT)**
@@ -740,9 +891,10 @@ need a phone/macOS audio and are a manual smoke step).
 
 ```bash
 cd ~/Projects/personal/claude-setup
-SB=$(mktemp -d)/.claude; mkdir -p "$SB/scripts" "$SB/commands"
+SB=$(mktemp -d)/.claude; mkdir -p "$SB/scripts/assets" "$SB/commands"
 cp core/scripts/* "$SB/scripts/"
-cp ntfy/scripts/* "$SB/scripts/"
+cp ntfy/scripts/*.sh "$SB/scripts/"
+cp ntfy/scripts/assets/* "$SB/scripts/assets/"
 cp -R tts/scripts/. "$SB/scripts/"
 cp consolidator/scripts/*.sh consolidator/scripts/*.txt "$SB/scripts/"
 mkdir -p "$SB/scripts/tests"; cp -R consolidator/scripts/tests/consolidator "$SB/scripts/tests/"
@@ -786,17 +938,29 @@ bash "$SB/scripts/tests/consolidator/run.sh"
 ```
 Expected: all tests pass.
 
+- [ ] **Step 4b: Build the Claude-icon notifier into the sandbox (macOS)**
+
+Skip if not on macOS. Builds into `$SB/apps` by pointing `$HOME` at the sandbox:
+```bash
+HOME="$(dirname "$SB")" bash "$SB/scripts/notifier-install.sh"
+APP="$SB/apps/Claude Code Notifier.app"
+test -f "$APP/Contents/Resources/cc.icns" && echo "icon: PASS" || echo "icon: FAIL"
+/usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier"  "$APP/Contents/Info.plist"  # expect com.claude.code.notifier
+/usr/libexec/PlistBuddy -c "Print :CFBundleDisplayName" "$APP/Contents/Info.plist"  # expect Claude Code
+```
+Expected: `icon: PASS`, `com.claude.code.notifier`, `Claude Code`. (No `bernardo`.)
+
 - [ ] **Step 5: Clean up sandbox**
 
 ```bash
 rm -rf "$(dirname "$SB")"
 ```
 
-- [ ] **Step 6: Final repo sanity check**
+- [ ] **Step 6: Final repo sanity check** (`-I` skips the binary icon)
 
 ```bash
 cd ~/Projects/personal/claude-setup
-grep -rn "bernardo" . --exclude-dir=.git && echo "FAIL: personal strings" || echo "CLEAN"
+grep -rnI "bernardo" . --exclude-dir=.git && echo "FAIL: personal strings" || echo "CLEAN"
 git status --short    # expect clean working tree (all committed)
 git log --oneline
 ```
@@ -825,6 +989,10 @@ gh repo view --web
 ## Self-Review
 
 **Spec coverage:**
+- Native macOS notification with Claude icon → `notify.sh` (ntfy, Task 3) +
+  `notifier-install.sh`/`notifier-uninstall.sh` + `cc.icns` (Task 3), optional
+  install sub-step in `ntfy/INSTALL.md`, build-tested in Task 7 Step 4b. Generic
+  bundle id `com.claude.code.notifier` written by the builder. ✓
 - By-module layout → Tasks 2–5. ✓
 - Scripts-only export, no confs → `.gitignore` (Task 1) + no conf copy steps. ✓
 - Six-section runbooks → Tasks 3/4/5 INSTALL.md authored in full. ✓

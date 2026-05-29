@@ -13,10 +13,14 @@ No standalone installer script — the runbook is the install mechanism.
 
 The three subsystems:
 
-- **ntfy** — phone push notifications via [ntfy.sh](https://ntfy.sh). A central
-  `notify.sh` hooks *every* Claude Code event (Stop, Notification,
-  PermissionRequest, SessionStart/End, SubagentStop, PreCompact) and pushes to a
-  per-user topic. Per-event and per-session toggles.
+- **ntfy** — notifications for *every* Claude Code event (Stop, Notification,
+  PermissionRequest, SessionStart/End, SubagentStop, PreCompact). A central
+  `notify.sh` fires a **native macOS notification** (branded with the Claude icon
+  via an optional `terminal-notifier` wrapper app) **and** a **phone push** to a
+  per-user ntfy.sh topic. Per-event and per-session toggles. The Claude-icon
+  wrapper is built locally from the user's `terminal-notifier` by
+  `notifier-install.sh` (ships `cc.icns` only, generic bundle id
+  `com.claude.code.notifier`); no binary is committed.
 - **tts** — speaks Claude's responses on `Stop` via macOS `say` or a local Kokoro
   TTS server; LLM-cleans the text first (OpenRouter fast-path, or `claude -p`
   fallback). Per-session/global config for voice, rate, cleanup mode.
