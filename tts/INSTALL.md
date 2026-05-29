@@ -6,7 +6,7 @@ first (OpenRouter fast-path, else `claude -p`), then synthesizes via a local
 
 ## Prerequisites
 - **core installed** (see `../core/INSTALL.md`)
-- macOS (`say`, `afplay`), `bash`, `jq`, `curl`
+- macOS (`say`, `afplay`), `bash`, `jq`, `python3`, `curl`
 - Optional: a Kokoro TTS server for higher-quality voices (`tts-kokoro-install.sh`)
 - Optional: an OpenRouter API key for fast text cleanup (else falls back to `claude -p`)
 - Optional: Karabiner-Elements for global stop-speech hotkeys

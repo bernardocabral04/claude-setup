@@ -21,13 +21,15 @@ module.
 2. Install any modules you want, in any order: follow that module's `INSTALL.md`.
 3. Restart Claude Code so the new hooks load.
 
-Each runbook has six sections: Prerequisites → Place files → Wire hooks → Enable →
-Verify → Uninstall.
+Each module runbook roughly follows: Prerequisites → Place files → Wire hook(s) →
+Enable → Verify → Uninstall (some add an optional step — e.g. the tts extras or the
+ntfy Claude-icon notifier).
 
 ## Conventions & assumptions
 
-- Files install **flat** into `~/.claude/scripts/` and `~/.claude/commands/`
-  (the scripts call each other by absolute `~/.claude/scripts/...` path).
+- Files install into `~/.claude/scripts/` (plus an `assets/` and/or `tests/` subdir
+  for some modules) and `~/.claude/commands/` — the scripts call each other by
+  absolute `~/.claude/scripts/...` path.
 - The config dir is assumed to be the default `~/.claude`. `core`'s session-id
   resolver honors `CLAUDE_CONFIG_DIR`; the rest currently hardcode `~/.claude`.
 - **No config files are shipped.** Each module's `*-enable` regenerates a clean
@@ -40,10 +42,10 @@ Verify → Uninstall.
 
 ## Dependencies
 
-- All: `bash`, `jq`. ntfy/consolidator also use `curl`.
+- All: `bash`, `jq`. ntfy/consolidator/tts also use `curl`.
 - ntfy: ntfy phone app; optional `terminal-notifier` (auto-installed for the
   Claude-icon macOS notifier), `qrencode`, macOS `pbcopy`.
-- tts: macOS (`say`, `afplay`); optional Kokoro server, OpenRouter key,
+- tts: macOS (`say`, `afplay`), `python3`; optional Kokoro server, OpenRouter key,
   Karabiner-Elements (stop hotkeys).
 - consolidator: optional OpenRouter key.
 
