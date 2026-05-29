@@ -312,19 +312,20 @@ if ! command -v terminal-notifier >/dev/null 2>&1; then
   fi
 fi
 
-# Locate the real terminal-notifier.app. The brew 'bin' entry is a symlink into
-# the .app at .../terminal-notifier.app/Contents/MacOS/terminal-notifier.
+# Locate the real terminal-notifier.app.
+# Homebrew installs a shell-script wrapper at .../bin/terminal-notifier that execs the
+# real binary inside the .app; resolving symlinks leads to that wrapper, not a binary
+# inside .app/Contents/MacOS.  Handle both cases:
+#   A) BIN (after full symlink resolution) lives inside .app/Contents/MacOS  → go up two dirs.
+#   B) BIN is a shell-script wrapper → parse the exec "…/terminal-notifier.app/…" line.
 BIN="$(command -v terminal-notifier)"
-LINK="$(readlink "$BIN" 2>/dev/null || true)"
-if [ -n "$LINK" ]; then
-  case "$LINK" in
-    /*) REAL="$LINK" ;;
-    *)  REAL="$(cd "$(dirname "$BIN")" && cd "$(dirname "$LINK")" && pwd)/$(basename "$LINK")" ;;
-  esac
-else
-  REAL="$BIN"
-fi
+REAL="$(realpath "$BIN" 2>/dev/null || python3 -c "import os,sys;print(os.path.realpath(sys.argv[1]))" "$BIN")"
 SRC_APP="$(cd "$(dirname "$REAL")/../.." 2>/dev/null && pwd || true)"
+if [ -z "$SRC_APP" ] || [ ! -d "$SRC_APP/Contents/MacOS" ]; then
+  # Wrapper script case: parse the exec line for a path ending in .app/Contents/MacOS/…
+  EXEC_PATH=$(grep -oE '"[^"]+\.app/Contents/MacOS/[^"]+"' "$REAL" 2>/dev/null | head -1 | tr -d '"')
+  [ -n "$EXEC_PATH" ] && SRC_APP="$(cd "$(dirname "$EXEC_PATH")/../.." 2>/dev/null && pwd || true)"
+fi
 if [ -z "$SRC_APP" ] || [ ! -d "$SRC_APP/Contents/MacOS" ]; then
   echo "ERROR: could not locate terminal-notifier.app from $BIN" >&2; exit 1
 fi
