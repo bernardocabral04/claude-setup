@@ -14,12 +14,14 @@ module.
 | [`ntfy`](ntfy/INSTALL.md) | Native macOS notifications (with the Claude icon, via an optional terminal-notifier wrapper) **and** phone push via [ntfy.sh](https://ntfy.sh) for every Claude Code event. | SessionStart/End, Stop, Notification, PermissionRequest, SubagentStop, PreCompact | native notif/icon are macOS; phone push is cross-platform |
 | [`tts`](tts/INSTALL.md) | Speaks Claude's responses on `Stop` (Kokoro server or macOS `say`), LLM-cleaned. | Stop | yes (`say`/`afplay`) |
 | [`consolidator`](consolidator/INSTALL.md) | On `Stop`, evaluates the transcript and consolidates long-term memory files. | Stop | no |
+| [`statusline`](statusline/INSTALL.md) | Multi-line status bar: profile, model + context %, rate limits, cwd + git, and live TTS/Ntfy/Consolidator chips. **Standalone — no core needed.** | — (uses the `statusLine` setting) | yes (`stat -f`) |
 
 ## Install
 
-1. Install **core** first: follow [`core/INSTALL.md`](core/INSTALL.md).
+1. Install **core** first: follow [`core/INSTALL.md`](core/INSTALL.md). (Every
+   module needs it except `statusline`, which is standalone.)
 2. Install any modules you want, in any order: follow that module's `INSTALL.md`.
-3. Restart Claude Code so the new hooks load.
+3. Restart Claude Code so the new hooks / statusline load.
 
 Each module runbook roughly follows: Prerequisites → Place files → Wire hook(s) →
 Enable → Verify → Uninstall (some add an optional step — e.g. the tts extras or the
@@ -48,6 +50,7 @@ ntfy Claude-icon notifier).
 - tts: macOS (`say`, `afplay`), `python3`; optional Kokoro server, OpenRouter key,
   Karabiner-Elements (stop hotkeys).
 - consolidator: optional OpenRouter key.
+- statusline: `bash`, `jq`, `git`, macOS (`stat -f`); optional `fswatch` for the git ahead/behind daemon.
 
 ## Notices
 
