@@ -1,0 +1,5 @@
+# Never commit user runtime state or secrets
+*.conf
+*.conf.bak*
+.DS_Store
+*-sessions/
