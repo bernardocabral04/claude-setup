@@ -1,0 +1,2 @@
+{"type":"system","message":{"role":"system","content":"boot"}}
+{"type":"tool_use","message":{"role":"assistant","content":[{"type":"tool_use","name":"ls"}]}}

@@ -1,0 +1,2 @@
+{"type":"user","message":{"role":"user","content":"Actually the Linear project INGEST now also covers pipeline incidents, not just bugs."}}
+{"type":"assistant","message":{"role":"assistant","content":[{"type":"text","text":"Updated mental model — INGEST = bugs + incidents."}]}}

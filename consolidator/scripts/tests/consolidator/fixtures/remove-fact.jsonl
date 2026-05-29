@@ -1,0 +1,2 @@
+{"type":"user","message":{"role":"user","content":"We've moved bug tracking out of Linear entirely — please forget the INGEST memory."}}
+{"type":"assistant","message":{"role":"assistant","content":[{"type":"text","text":"Got it — that memory is now stale."}]}}

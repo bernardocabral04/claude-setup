@@ -1,0 +1,4 @@
+{"type":"user","message":{"role":"user","content":"We track all pipeline bugs in Linear project INGEST."}}
+{"type":"assistant","message":{"role":"assistant","content":[{"type":"text","text":"Got it — noted for routing."}]}}
+{"type":"tool_use","message":{"role":"assistant","content":[{"type":"tool_use","name":"bash"}]}}
+{"type":"assistant","message":{"role":"assistant","content":[{"type":"thinking","text":"hidden"},{"type":"text","text":"Confirmed."}]}}
