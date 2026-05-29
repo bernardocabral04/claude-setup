@@ -328,8 +328,8 @@ DAEMON_SCRIPT="$HOME/.claude/scripts/network-daemon.sh"
 DAEMON_PID_FILE="$HOME/.claude/cache/network-daemon.pid"
 NET_STATE_FILE="$HOME/.claude/cache/network-status"
 
-# Spawn daemon if not running
-if [ ! -f "$DAEMON_PID_FILE" ] || ! kill -0 "$(cat "$DAEMON_PID_FILE" 2>/dev/null)" 2>/dev/null; then
+# Spawn daemon if installed and not already running
+if [ -x "$DAEMON_SCRIPT" ] && { [ ! -f "$DAEMON_PID_FILE" ] || ! kill -0 "$(cat "$DAEMON_PID_FILE" 2>/dev/null)" 2>/dev/null; }; then
   nohup bash "$DAEMON_SCRIPT" &>/dev/null &
   disown
 fi
