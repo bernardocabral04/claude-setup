@@ -1,0 +1,50 @@
+{
+  "title": "Claude Code TTS — Stop hotkeys",
+  "rules": [
+    {
+      "description": "Cmd+Opt+Shift+. — Stop ALL Claude Code TTS playback",
+      "manipulators": [
+        {
+          "type": "basic",
+          "from": {
+            "key_code": "period",
+            "modifiers": {
+              "mandatory": [
+                "command",
+                "option",
+                "shift"
+              ]
+            }
+          },
+          "to": [
+            {
+              "shell_command": "/bin/bash $HOME/.claude/scripts/tts-stop-all.sh"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "description": "Cmd+Opt+. — Stop CURRENT Claude Code TTS playback",
+      "manipulators": [
+        {
+          "type": "basic",
+          "from": {
+            "key_code": "period",
+            "modifiers": {
+              "mandatory": [
+                "command",
+                "option"
+              ]
+            }
+          },
+          "to": [
+            {
+              "shell_command": "/bin/bash $HOME/.claude/scripts/tts-stop-current.sh"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
