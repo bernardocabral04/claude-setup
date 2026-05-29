@@ -959,13 +959,18 @@ rm -rf "$(dirname "$SB")"
 
 - [ ] **Step 6: Final repo sanity check** (`-I` skips the binary icon)
 
+Scope the personal-string check to the **module** dirs — `docs/` legitimately quotes
+the old "before" strings while documenting the genericization, and `LICENSE` carries
+the author's name, so a repo-wide grep is expected to hit those.
 ```bash
 cd ~/Projects/personal/claude-setup
-grep -rnI "bernardo" . --exclude-dir=.git && echo "FAIL: personal strings" || echo "CLEAN"
+grep -rnI "bernardo" core ntfy tts consolidator && echo "FAIL: personal strings in modules" || echo "MODULES CLEAN"
+# Secret scan (must find NOTHING real — placeholders/empties are fine):
+grep -rnI "sk-or-v1-[0-9a-f]" . --exclude-dir=.git && echo "FAIL: live key" || echo "NO LIVE SECRETS"
 git status --short    # expect clean working tree (all committed)
 git log --oneline
 ```
-Expected: `CLEAN` and a clean tree.
+Expected: `MODULES CLEAN`, `NO LIVE SECRETS`, and a clean tree.
 
 ---
 
