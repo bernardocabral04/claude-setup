@@ -35,6 +35,8 @@ ntfy Claude-icon notifier).
   absolute `~/.claude/scripts/...` path.
 - The config dir is assumed to be the default `~/.claude`. `core`'s session-id
   resolver honors `CLAUDE_CONFIG_DIR`; the rest currently hardcode `~/.claude`.
+  To run multiple profiles (work/personal/etc.) on one machine, see
+  [`multi-profile/`](multi-profile/README.md).
 - **No config files are shipped.** Each module's `*-enable` regenerates a clean
   `~/.claude/<module>.conf` on first run, so no API keys or personal topics live
   in this repo. Add an optional `OPENROUTER_API_KEY` yourself (tts + consolidator

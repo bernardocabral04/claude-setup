@@ -1,0 +1,18 @@
+{
+  "primarySource": "personal",
+  "activeProfile": "personal",
+  "profiles": {
+    "personal": {
+      "configDir": "~/.claude",
+      "email": "you@example.com",
+      "orgName": "Personal",
+      "isPrimary": true
+    },
+    "work": {
+      "configDir": "~/.claude-work",
+      "email": "you@company.com",
+      "orgName": "Your Company",
+      "mergeSessions": false
+    }
+  }
+}
