@@ -15,12 +15,14 @@ module.
 | [`tts`](tts/INSTALL.md) | Speaks Claude's responses on `Stop` (Kokoro server or macOS `say`), LLM-cleaned. | Stop | yes (`say`/`afplay`) |
 | [`consolidator`](consolidator/INSTALL.md) | On `Stop`, evaluates the transcript and consolidates long-term memory files. | Stop | no |
 | [`ai-rename`](ai-rename/INSTALL.md) | `/ai-rename` — names the current session from its content (`<project>/<topic>`, prefixed by your username). Manual command. | — (slash command) | no (macOS only for live-TUI auto-sync) |
+| [`statusline`](statusline/INSTALL.md) | Multi-line status bar: profile, model + context %, rate limits, cwd + git, and live TTS/Ntfy/Consolidator chips. **Standalone — no core needed.** | — (uses the `statusLine` setting) | yes (`stat -f`) |
 
 ## Install
 
-1. Install **core** first: follow [`core/INSTALL.md`](core/INSTALL.md).
+1. Install **core** first: follow [`core/INSTALL.md`](core/INSTALL.md). (Every
+   module needs it except `statusline`, which is standalone.)
 2. Install any modules you want, in any order: follow that module's `INSTALL.md`.
-3. Restart Claude Code so the new hooks load.
+3. Restart Claude Code so the new hooks / statusline load.
 
 Each module runbook roughly follows: Prerequisites → Place files → Wire hook(s) →
 Enable → Verify → Uninstall (some add an optional step — e.g. the tts extras or the
@@ -46,10 +48,11 @@ ntfy Claude-icon notifier).
 - All: `bash`, `jq`. ntfy/consolidator/tts also use `curl`.
 - ntfy: ntfy phone app; optional `terminal-notifier` (auto-installed for the
   Claude-icon macOS notifier), `qrencode`, macOS `pbcopy`.
-- tts: macOS (`say`, `afplay`), `python3`; optional Kokoro server, OpenRouter key,
-  Karabiner-Elements (stop hotkeys).
+- tts: macOS (`say`, `afplay`), `python3`; optional Kokoro server (needs Python
+  3.10–3.12), OpenRouter key, Karabiner-Elements (stop hotkeys).
 - consolidator: optional OpenRouter key.
 - ai-rename: `bash`, `jq`, `core`; optional `git` (branch hint), macOS + Accessibility permission for the live-TUI auto-sync.
+- statusline: `bash`, `jq`, `git`, macOS (`stat -f`); optional `fswatch` for the git ahead/behind daemon.
 
 ## Notices
 
@@ -58,6 +61,9 @@ ntfy Claude-icon notifier).
   `notifier-install.sh` builds a wrapper from your locally installed copy.
 - `cc.icns` is the Claude logo (an Anthropic mark), included only for personal use
   to brand local notifications. Not affiliated with or endorsed by Anthropic.
+- [Kokoro-82M](https://huggingface.co/hexgrad/Kokoro-82M) and the `kokoro` PyPI
+  package are Apache-2.0. `tts/kokoro-server/server.py` is a thin local FastAPI
+  wrapper; the model weights download at runtime and are not committed.
 
 ## License
 
