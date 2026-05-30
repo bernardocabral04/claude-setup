@@ -36,9 +36,20 @@ Creates `~/.claude/tts.conf` with defaults (Apple voice `Samantha`, empty
 `OPENROUTER_API_KEY`) and plays a test phrase.
 
 ## 4. Optional extras
-- **Kokoro voices:** `bash ~/.claude/scripts/tts-kokoro-install.sh` (sets up a
-  launchd-managed Kokoro server at `http://127.0.0.1:8321`). Uninstall:
-  `tts-kokoro-uninstall.sh`.
+- **Kokoro voices (higher quality):** requires Python 3.10–3.12
+  (`brew install python@3.12`). Stage the server, then build it:
+  ```bash
+  mkdir -p ~/.claude/services/kokoro
+  cp tts/kokoro-server/server.py tts/kokoro-server/requirements.txt ~/.claude/services/kokoro/
+  bash ~/.claude/scripts/tts-kokoro-install.sh                 # build venv + start.sh, smoke-test
+  bash ~/.claude/scripts/tts-kokoro-install.sh --with-launchd  # optional: run as a login service
+  ```
+  First run downloads the Kokoro-82M model (~hundreds of MB, cached). The server
+  listens on `http://127.0.0.1:8321`; `tts-speak.sh` uses it automatically and
+  falls back to Apple `say`. Tune `TTS_KOKORO_VOICE` / `TTS_KOKORO_SPEED` in
+  `~/.claude/tts.conf`. Uninstall: `bash ~/.claude/scripts/tts-kokoro-uninstall.sh`
+  then `rm -rf ~/.claude/services/kokoro`. Alternative: `tts/kokoro-server/Dockerfile`
+  builds a container serving on port 7860.
 - **OpenRouter fast cleanup:** edit `~/.claude/tts.conf`, set `OPENROUTER_API_KEY=...`
   (get one at https://openrouter.ai/keys). Without it, cleanup uses `claude -p`.
 - **Stop hotkeys (Karabiner):** `bash ~/.claude/scripts/tts-stop-install.sh`, then
