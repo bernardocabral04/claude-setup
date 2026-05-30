@@ -1,19 +1,22 @@
 #!/bin/bash
 # tts-kokoro-install.sh — Set up the dedicated Kokoro TTS server install
-# under ~/.claude/services/kokoro/. Idempotent: safe to re-run to upgrade
-# pip deps or re-copy the latest server.py.
+# under ~/.claude/services/kokoro/. Requires server.py + requirements.txt to be
+# present in the install dir first (copy them from tts/kokoro-server/).
+# Idempotent: safe to re-run to upgrade pip deps or rebuild the venv.
+# Override the target dir with KOKORO_INSTALL_DIR (used for testing).
 set -e
 
-SOURCE_DIR="$HOME/Projects/personal/speed-reader/speeder/kokoro-server"
-INSTALL_DIR="$HOME/.claude/services/kokoro"
+INSTALL_DIR="${KOKORO_INSTALL_DIR:-$HOME/.claude/services/kokoro}"
 PLIST_LABEL="com.claude.tts-kokoro"
 PLIST_PATH="$HOME/Library/LaunchAgents/$PLIST_LABEL.plist"
 SERVER_PORT=8321
 
-# --- Pre-flight ---
-if [ ! -d "$SOURCE_DIR" ]; then
-  echo "ERROR: Kokoro source dir not found at $SOURCE_DIR" >&2
-  echo "       Cannot continue without speed-reader's server.py." >&2
+# --- Pre-flight: server files must already be staged in INSTALL_DIR ---
+if [ ! -f "$INSTALL_DIR/server.py" ] || [ ! -f "$INSTALL_DIR/requirements.txt" ]; then
+  echo "ERROR: Kokoro server files not found in $INSTALL_DIR" >&2
+  echo "       Copy them there first:" >&2
+  echo "         mkdir -p \"$INSTALL_DIR\"" >&2
+  echo "         cp tts/kokoro-server/server.py tts/kokoro-server/requirements.txt \"$INSTALL_DIR\"/" >&2
   exit 1
 fi
 
@@ -38,12 +41,6 @@ if [ -z "$PY" ]; then
   exit 1
 fi
 echo "Using $PY (Python $PY_VER)"
-
-# --- Layout ---
-mkdir -p "$INSTALL_DIR"
-echo "Copying server.py and requirements.txt from $SOURCE_DIR ..."
-cp "$SOURCE_DIR/server.py"        "$INSTALL_DIR/server.py"
-cp "$SOURCE_DIR/requirements.txt" "$INSTALL_DIR/requirements.txt"
 
 # --- Virtualenv ---
 if [ ! -d "$INSTALL_DIR/venv" ]; then
