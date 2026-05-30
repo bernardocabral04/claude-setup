@@ -114,10 +114,13 @@ shared by every profile. Their awareness of the active profile varies:
 |--------|--------------------|
 | **statusline** | Yes — shows a profile chip derived from `CLAUDE_CONFIG_DIR` (`~/.claude` → `personal`, else the dir's basename). |
 | **core** `_resolve-session-id.sh`, **ai-rename** (collect/persist) | Yes — honor `CLAUDE_CONFIG_DIR` when resolving sessions/transcripts. |
-| **ntfy / tts / consolidator** | No — their `.conf` files and `*-sessions/` state live under `~/.claude` and are effectively shared across profiles. Installing them once covers all profiles; they don't keep separate per-profile config. |
+| **ntfy / tts** | No — their `.conf` files and `*-sessions/` state live under `~/.claude` and are shared across profiles. Installing them once covers all profiles. |
+| **consolidator** | Partial — its `.conf` and `consolidator-sessions/` state are shared under `~/.claude`, but the consolidated memory it writes goes to `$CLAUDE_CONFIG_DIR/projects/<project>/memory/MEMORY.md`, so **memory output is per-profile**. |
 
-If you need fully isolated notification/TTS/consolidator config per profile, that
-isn't supported today (the scripts hardcode `~/.claude` for those paths).
+If you need fully isolated notification/TTS config per profile, that isn't supported
+today (those scripts hardcode `~/.claude`). The consolidator shares its config and
+session-tracking but writes consolidated memory under the active profile's config
+dir, so each profile builds its own memory.
 
 ## clausona (optional automation)
 
