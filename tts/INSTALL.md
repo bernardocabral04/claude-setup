@@ -41,7 +41,7 @@ Creates `~/.claude/tts.conf` with defaults (Apple voice `Samantha`, empty
   ```bash
   mkdir -p ~/.claude/services/kokoro
   cp tts/kokoro-server/server.py tts/kokoro-server/requirements.txt ~/.claude/services/kokoro/
-  bash ~/.claude/scripts/tts-kokoro-install.sh                 # build venv + start.sh, smoke-test
+  bash ~/.claude/scripts/tts-kokoro-install.sh                 # build venv + start.sh
   bash ~/.claude/scripts/tts-kokoro-install.sh --with-launchd  # optional: run as a login service
   ```
   First run downloads the Kokoro-82M model (~hundreds of MB, cached). The server
