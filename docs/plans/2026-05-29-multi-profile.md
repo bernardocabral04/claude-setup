@@ -10,6 +10,14 @@
 
 **Repo:** `~/Projects/personal/claude-setup`, branch `feat/multi-profile-docs`, base `1879354`.
 
+> **Post-plan revision (per user request):** the runbook was expanded after this plan
+> to make `clausona` install + configuration first-class — upstream `install.sh`,
+> `init`/`shell-init`, `add`/`config`, daily commands, the `ccp`/`ccpy`/`ccw`/`ccwy`
+> zsh launchers (`y` = `--dangerously-skip-permissions`), and the symlink sharing
+> model — plus a *Manual* section for the no-clausona path. The committed
+> `multi-profile/README.md` is authoritative; the Task 1 Step 2 block below reflects
+> the earlier (footnote-style) draft.
+
 ---
 
 ## File Structure

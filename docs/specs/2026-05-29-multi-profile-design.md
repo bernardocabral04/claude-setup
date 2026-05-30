@@ -7,19 +7,22 @@
 ## Goal
 
 Document the multi-profile (multiple `CLAUDE_CONFIG_DIR`) setup so anyone can
-replicate it, plus a sanitized config example. **Docs only** — the author's
-`clausona` CLI that automates it is referenced, not vendored (it is a standalone
-Ink/React tool whose source is not in this repo, and its on-disk config holds
-personal data + credential backups).
+replicate it, plus a sanitized config example. **Docs only, not vendored** —
+`clausona` is a third-party CLI ([github.com/larcane97/clausona](https://github.com/larcane97/clausona));
+the runbook documents installing it from upstream and configuring it, but never
+copies the program into this repo (its on-disk config holds personal data +
+credential backups).
 
-## Why docs-only
+## Why docs-only (not vendored)
 
-`clausona` ships only as a 1.9 MB esbuild bundle on the author's machine (no source
-here); its runtime config (`~/.clausona/profiles.json`, `usage.json`,
-`backups/*/.claude.json`) holds emails, org names, and credential backups. The
-*program* is generic (reads `CLAUDE_CONFIG_DIR`), but vendoring a generated blob
-into a public repo is undesirable. The reproducible, shareable part is the **setup**:
-the config-dir convention, the `profiles.json` manifest schema, and how the
+`clausona` is a third-party tool published at
+[github.com/larcane97/clausona](https://github.com/larcane97/clausona), installed
+via its upstream `install.sh` (not on npm, not the author's code). We don't copy it
+into this repo — the runbook points at the upstream install and documents how to
+configure it. Its runtime config (`~/.clausona/profiles.json`, `usage.json`,
+`backups/*/.claude.json`) holds emails, org names, and credential backups, so that
+stays out. The reproducible, shareable part is the **setup**: clausona's install +
+config commands, the config-dir convention, the manifest schema, and how the
 claude-setup add-ons behave under multiple profiles.
 
 ## Deliverables
@@ -55,9 +58,17 @@ module — no module-table row, no INSTALL.md.
    - **ntfy / tts / consolidator** — installed once into `~/.claude/scripts`; their
      `.conf` files and `*-sessions/` state live under `~/.claude` and are effectively
      **shared** across profiles. Documented limitation, not changed here.
-5. **clausona (optional automation)** — brief description of what it does (switch the
-   active profile, back up/restore each profile's `.claude.json`, track per-profile
-   usage/cost). The author's separate tool; the manual setup above works without it.
+5. **clausona — install + config (recommended path)**: upstream install
+   (`curl … install.sh | bash`; Node ≥ 20, macOS/zsh), `clausona init` +
+   `eval "$(clausona shell-init)"`, `add`/`login`/`config` per profile, the daily
+   commands (`use`/`run`/`list`/`current`/`usage`/interactive dashboard), the
+   `ccp`/`ccpy`/`ccw`/`ccwy` zsh launchers (trailing `y` = `--dangerously-skip-permissions`),
+   maintenance (`doctor`/`repair`/`login`/`remove`/`uninstall`), and clausona's
+   symlink **sharing model** (shared `skills`/`scripts`/`settings.json`/etc. vs
+   per-profile `.claude.json`/`projects/`/plugin-registry) — which is why the
+   claude-setup add-ons installed once cover every profile.
+6. **Manual (no clausona)** — the underlying `CLAUDE_CONFIG_DIR` convention +
+   launch function, for users who don't want clausona.
 
 ## `multi-profile/profiles.json.example` (sanitized)
 
