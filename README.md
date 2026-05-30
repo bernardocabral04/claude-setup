@@ -47,8 +47,8 @@ ntfy Claude-icon notifier).
 - All: `bash`, `jq`. ntfy/consolidator/tts also use `curl`.
 - ntfy: ntfy phone app; optional `terminal-notifier` (auto-installed for the
   Claude-icon macOS notifier), `qrencode`, macOS `pbcopy`.
-- tts: macOS (`say`, `afplay`), `python3`; optional Kokoro server, OpenRouter key,
-  Karabiner-Elements (stop hotkeys).
+- tts: macOS (`say`, `afplay`), `python3`; optional Kokoro server (needs Python
+  3.10–3.12), OpenRouter key, Karabiner-Elements (stop hotkeys).
 - consolidator: optional OpenRouter key.
 - statusline: `bash`, `jq`, `git`, macOS (`stat -f`); optional `fswatch` for the git ahead/behind daemon.
 
@@ -59,6 +59,9 @@ ntfy Claude-icon notifier).
   `notifier-install.sh` builds a wrapper from your locally installed copy.
 - `cc.icns` is the Claude logo (an Anthropic mark), included only for personal use
   to brand local notifications. Not affiliated with or endorsed by Anthropic.
+- [Kokoro-82M](https://huggingface.co/hexgrad/Kokoro-82M) and the `kokoro` PyPI
+  package are Apache-2.0. `tts/kokoro-server/server.py` is a thin local FastAPI
+  wrapper; the model weights download at runtime and are not committed.
 
 ## License
 
